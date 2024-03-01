@@ -1,0 +1,128 @@
+---
+title: "OMSBA5300 Final DTC - Group 5"
+author: "Evan Deparsia; Ian Basco; June Lee; Lei Chen"
+format: html
+editor: visual
+---
+
+## Question 1
+
+How has COVID affected the health of the retail industry, as measured by employment?
+
+Dependent Variable: average number of people per month in the retails industry with employment status as employed
+
+Independent Variables: binary variable After_covid, month, interaction term of after_covid and month.
+
+## Data Cleanining
+
+Aggregate employment variable at industry_month level after filtering out people not in labor force and people in armed force. The reason these records are filtered out is that we want to see the change in employment status, and people not in labor force or in armed force won't have employment status change. Therefore, they don't need to be included in the data set.
+
+We were not able to pull selected year and month data, because it still gave us the entire time range data after select and download, so we need to manually filter out those before 2019 and after April 2022.
+
+```{r}
+# import libraries
+library(tidyverse)
+library(rio)
+library(vtable)
+library(fixest)
+library(ipumsr)
+```
+
+```{r}
+# import data
+ddi <- read_ipums_ddi("../data/cps_00002.xml")
+data <- read_ipums_micro(ddi)
+ind_name <- import('../data/indnames.csv')
+```
+
+```{r}
+
+```
+
+```{r}
+# check labels
+labeltable(data$EMPSTAT)
+labeltable(data$LABFORCE)
+```
+
+```{r}
+# check distribution of each status
+table(data$EMPSTAT)
+table(data$LABFORCE)
+```
+
+0 - NIU (Not in Universe) and 1 - Armed Forces together in employment status equals to 0 - NIU in labor force variable. And 32 - NILF Unable to work, 34 - NILF other, and 36 - NILF retired together in employment status equals to 1 - No not in labor force in labor force variable. And 10 - At work, 12 - Has job not at work last week, 21 - unemployed experienced worker, and 22 - unemployed new worker together equals 2 - Yes in labor force in labor force variable. Therefore, we can safely filter out those not in labor force by only keeping those with value 2 in labor force variable.
+
+```{}
+```
+
+```{r}
+# select variables needed for question 1 and pre-process data
+
+df1 <- data %>% 
+  select(YEAR, MONTH, WTFINL, EMPSTAT, LABFORCE, IND) %>% 
+  filter(LABFORCE == 2) %>% 
+  mutate(year_month = paste(YEAR, sprintf('%02d', MONTH), sep='-')) %>% 
+  filter(year_month >= '2019-05' & year_month <= '2022-04') %>% 
+  filter(year_month != '2020-03') %>% 
+  select(-LABFORCE) %>% 
+  mutate(employed = EMPSTAT %in% c(10, 12)) %>% 
+  rename_all(tolower) %>% 
+  left_join(ind_name, by='ind') %>% 
+  filter(indname == 'Retail Trade') %>% 
+  group_by(year, month) %>% 
+  summarize(avg_emp = weighted.mean(employed, wtfinl, na.rm = TRUE)) %>% 
+  mutate(after_covid = paste(year, sprintf('%02d', month), sep='-') >= '2020-04') %>% 
+  drop_na(avg_emp)
+#vtable(df1)
+```
+
+```{r}
+# check distribution of avg_emp
+ggplot(df1, aes(avg_emp)) +
+  geom_density()
+```
+
+```{r}
+# check distribution of avg_emp by year or month
+ggplot(df1, aes(x=year, y=avg_emp)) +
+  geom_point()
+```
+
+The plot shows that there is clustering in years.
+
+```{r}
+ggplot(df1, aes(x=month, y=avg_emp)) +
+  geom_point()
+```
+
+The variance of avg_emp also seem to varies by month.
+
+```{r}
+m1 <- feols(avg_emp ~ after_covid, data=df1)
+m2 <- feols(avg_emp ~ after_covid*month, data=df1)
+# fixed effect
+m3 <- feols(avg_emp ~ after_covid + month, vcov = ~month, data = df1)
+etable(m1, m2, m3, se='hetero')
+```
+
+```{r}
+#use wald() from fixest to test whether all months' coefficients are joinly 0
+m4 <- feols(avg_emp ~ after_covid + month, data = df1)
+wald(m4, 'month')
+```
+
+The p-value is higher than 0.1 so we failed to reject the null even at 90% confidence level.
+
+```         
+```
+
+## Interpretation
+
+coefficient's interpretations...
+
+```{r}
+# double check the distribution of empstat and labforce
+table(df1$EMPSTAT)
+table(df1$LABFORCE)
+```
