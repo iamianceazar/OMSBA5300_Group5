@@ -5,15 +5,15 @@ format: html
 editor: visual
 ---
 
-## Question 1
+# Question 1
 
 How has COVID affected the health of the retail industry, as measured by employment?
 
-Dependent Variable: average number of people per month in the retails industry with employment status as employed
+Dependent Variable: average employment rate per month in the retails industry.
 
-Independent Variables: binary variable After_covid, month, interaction term of after_covid and month.
+Independent Variables: binary variable After_covid, and categorical variable year.
 
-## Data Cleanining
+## Data Cleaning
 
 Aggregate employment variable at industry_month level after filtering out people not in labor force and people in armed force. The reason these records are filtered out is that we want to see the change in employment status, and people not in labor force or in armed force won't have employment status change. Therefore, they don't need to be included in the data set.
 
@@ -35,9 +35,7 @@ data <- read_ipums_micro(ddi)
 ind_name <- import('../data/indnames.csv')
 ```
 
-```{r}
-
-```
+First, the distribution of EMPSTAT and LABFORCE was checked to determine which one to use as a filter to keep only employment and unemployment related records.
 
 ```{r}
 # check labels
@@ -53,9 +51,6 @@ table(data$LABFORCE)
 
 0 - NIU (Not in Universe) and 1 - Armed Forces together in employment status equals to 0 - NIU in labor force variable. And 32 - NILF Unable to work, 34 - NILF other, and 36 - NILF retired together in employment status equals to 1 - No not in labor force in labor force variable. And 10 - At work, 12 - Has job not at work last week, 21 - unemployed experienced worker, and 22 - unemployed new worker together equals 2 - Yes in labor force in labor force variable. Therefore, we can safely filter out those not in labor force by only keeping those with value 2 in labor force variable.
 
-```{}
-```
-
 ```{r}
 # select variables needed for question 1 and pre-process data
 
@@ -63,7 +58,7 @@ df1 <- data %>%
   select(YEAR, MONTH, WTFINL, EMPSTAT, LABFORCE, IND) %>% 
   filter(LABFORCE == 2) %>% 
   mutate(year_month = paste(YEAR, sprintf('%02d', MONTH), sep='-')) %>% 
-  filter(year_month >= '2019-05' & year_month <= '2022-04') %>% 
+  filter(year_month >= '2015-05' & year_month <= '2022-04') %>% 
   filter(year_month != '2020-03') %>% 
   select(-LABFORCE) %>% 
   mutate(employed = EMPSTAT %in% c(10, 12)) %>% 
@@ -73,56 +68,98 @@ df1 <- data %>%
   group_by(year, month) %>% 
   summarize(avg_emp = weighted.mean(employed, wtfinl, na.rm = TRUE)) %>% 
   mutate(after_covid = paste(year, sprintf('%02d', month), sep='-') >= '2020-04') %>% 
-  drop_na(avg_emp)
+  drop_na(avg_emp) %>% 
+  mutate(year_month = as.Date(paste(year, month, '01', sep = '-')))
 #vtable(df1)
 ```
+
+In the dataset used for answering question 1, March 2020 was dropped due to the March data for other years are null, hence no data to compare to March 2020 data, and we cannot really distinguish whether the effect of Covid really started to kick in in March 2020.
+
+## EDA
+
+Before deciding on which variable to include in the regressions, EDA was conducted to check the distributions of the dependent variable on its own and distributions of dependent variable for different independent variables.
 
 ```{r}
 # check distribution of avg_emp
 ggplot(df1, aes(avg_emp)) +
   geom_density()
+summary(df1$avg_emp)
 ```
+
+Average employment rate was mostly between 0.93 and 0.95, with mean of 0.93 and a few months around 0.85.
+
+```{r}
+# compare the avg_emp between before and after covid
+ggplot(data=df1, aes(x=after_covid, y=avg_emp)) +
+  geom_point() +
+  xlab('After Covid') +
+  ylab('Average Employment Rate') +
+  ggtitle('Average Employment Rate Before and After Covid ')
+```
+
+The average employment rate is very different before and after covid. So there is heteroskedasticity in the data, which means we should use heteroskedasticity - robust standard errors.
+
+Next we checked how average employment rate changes at the year-month level.
+
+```{r}
+ggplot(df1, aes(x=year_month, y=avg_emp)) +   
+  geom_point() +   
+  scale_x_date(date_labels = "%Y%m", date_breaks = "1 month") +
+  xlab('Year Month') +   
+  ylab('Average Employment Rate') +   
+  ggtitle('Average Employment Rate by Year Month') +   
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+From plot we can see that average employment rate had a sharp drop in April 2020, and slowly climbed up in the rest of the months in 2020.
 
 ```{r}
 # check distribution of avg_emp by year or month
-ggplot(df1, aes(x=year, y=avg_emp)) +
-  geom_point()
+ggplot(df1, aes(x=factor(year), y=avg_emp)) +
+  geom_point() +
+  xlab('Year') +
+  ylab('Average Employment Rate') +
+  ggtitle('Average Employment Rate by Year')
 ```
 
-The plot shows that there is clustering in years.
+The plot shows that the mean of average employment rate per year varied from year to year, mostly had a narrow spread, but had an unusally wide spread in year 2020, which is when the Covid-19 pandemic began. Therefore, year can be a good option to use as control variable.
+
+Next the distribution of average employment rate in each month was checked.
 
 ```{r}
-ggplot(df1, aes(x=month, y=avg_emp)) +
-  geom_point()
+ggplot(df1, aes(x=factor(month), y=avg_emp)) +
+  geom_point() +
+  xlab('Month') +
+  ylab('Average Employment Rate') +
+  ggtitle('Average Employment Rate by Month')
 ```
 
-The variance of avg_emp also seem to varies by month.
+The mean of avg_emp doesn't seem to vary a lot by month, with some data points for month of April, May, June, and July having the largest variance. Based on the Average Employment Rate by Year Month plot, the ones are very likely the immediate months in 2020 after Covid-19. So if Covid-19 didn't happen the average employment rate doesn't vary much from month to month. Therefore, month is not necessary to use as a control variable.
+
+## Regressions 
+
+The average employment rate of retail industry over time is not panel data, therefore, we cannot use fixed effects research design to control for any variables that we don't know of that have causal effects on average employment rates. However, we can control for years to take out the effect of year on average employment rate from error terms and check on the changes of the effect of Covid-19 from year to year. We know that we are leaving out some variables in the error term, But since we are only concerned about how Covid-19 impact the retail industry in term of employment and how this impact change over time, we are okay with omitted variable bias.
+
+We first regressed Average Employment Rate per month on a binary variable after_covid, then we added year as a categorical variable in our second model.
 
 ```{r}
-m1 <- feols(avg_emp ~ after_covid, data=df1)
-m2 <- feols(avg_emp ~ after_covid*month, data=df1)
-# fixed effect
-m3 <- feols(avg_emp ~ after_covid + month, vcov = ~month, data = df1)
-etable(m1, m2, m3, se='hetero')
+# use average employment rate on after_covid
+m1 <- feols(avg_emp ~ after_covid, data=df1, se='hetero')
+# add year as a categorical control
+m2 <- feols(avg_emp ~ after_covid + factor(year), data=df1, se='hetero')
+etable(m1, m2)
 ```
+
+Because there is collinearity between our binary variable after_covid and categorical variable year, we didn't do a regression with an interaction term between these two.
+
+From the statistical summary, we can see that with model 1, before Covid-19, the mean of the average employment rate per month in retail industry is 0.9565, while after Covid-19, the mean of the average employment rate per month is estimated to decrease by 0.0324. And this effect is highly statistically significant even at 99.9% level. With model 2, before Covid-19, the mean of average employment rate per month is estimated to be 0.9571. After Covid-19 and compared to year 2019, in year 2020 the mean of average employment rate is estimated to decrease by 0.0587; after Covid-19 and compared to year 2019, in year 2021, the mean of average employment rate is estimated to decrease by 0.0189, and this is statistically significant at 99% confidence level; after Covid-19 and compared to year 2019, in year 2022, the mean of average employment rate is estimated to decrease by 0.0076, and this is statistically significant at 99.9% confidence level. These results align with the actual data.
+
+## Statistics Testing
+
+Finally, we ran an F testing to see if the coefficients of years is joinly zero, because in model 2, the coefficient of year 2020 is not statistically significant.
 
 ```{r}
-#use wald() from fixest to test whether all months' coefficients are joinly 0
-m4 <- feols(avg_emp ~ after_covid + month, data = df1)
-wald(m4, 'month')
+wald(m2, 'year')
 ```
 
-The p-value is higher than 0.1 so we failed to reject the null even at 90% confidence level.
-
-```         
-```
-
-## Interpretation
-
-coefficient's interpretations...
-
-```{r}
-# double check the distribution of empstat and labforce
-table(df1$EMPSTAT)
-table(df1$LABFORCE)
-```
+The p-value is 0.001148, therefore, we are able to reject the null hypothesis at 99% confidence level. We do need to include year as a categorical control in the regression.
