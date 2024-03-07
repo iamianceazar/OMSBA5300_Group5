@@ -9,9 +9,11 @@ editor: visual
 
 How has COVID affected the health of the retail industry, as measured by employment?
 
-Dependent Variable: average employment rate per month in the retails industry.
+Variables of Interest:
 
-Independent Variables: binary variable After_covid, and categorical variable year.
+-   Dependent Variable: average employment rate per month in the retails industry.
+
+-   Independent Variables: binary variable After_covid, and categorical variable year, categorical variable month.
 
 ## Data Cleaning
 
@@ -52,9 +54,15 @@ table(data$LABFORCE)
 0 - NIU (Not in Universe) and 1 - Armed Forces together in employment status equals to 0 - NIU in labor force variable. And 32 - NILF Unable to work, 34 - NILF other, and 36 - NILF retired together in employment status equals to 1 - No not in labor force in labor force variable. And 10 - At work, 12 - Has job not at work last week, 21 - unemployed experienced worker, and 22 - unemployed new worker together equals 2 - Yes in labor force in labor force variable. Therefore, we can safely filter out those not in labor force by only keeping those with value 2 in labor force variable.
 
 ```{r}
+# check age 
+summary(data$AGE)
+```
+
+```{r}
 # select variables needed for question 1 and pre-process data
 
 df1 <- data %>% 
+  filter(AGE >= 18 & AGE <= 62) %>% 
   select(YEAR, MONTH, WTFINL, EMPSTAT, LABFORCE, IND) %>% 
   filter(LABFORCE == 2) %>% 
   mutate(year_month = paste(YEAR, sprintf('%02d', MONTH), sep='-')) %>% 
@@ -136,7 +144,7 @@ ggplot(df1, aes(x=factor(month), y=avg_emp)) +
 
 The mean of avg_emp doesn't seem to vary a lot by month, with some data points for month of April, May, June, and July having the largest variance. Based on the Average Employment Rate by Year Month plot, the ones are very likely the immediate months in 2020 after Covid-19. So if Covid-19 didn't happen the average employment rate doesn't vary much from month to month. Therefore, month is not necessary to use as a control variable.
 
-## Regressions 
+## Regressions
 
 The average employment rate of retail industry over time is not panel data, therefore, we cannot use fixed effects research design to control for any variables that we don't know of that have causal effects on average employment rates. However, we can control for years to take out the effect of year on average employment rate from error terms and check on the changes of the effect of Covid-19 from year to year. We know that we are leaving out some variables in the error term, But since we are only concerned about how Covid-19 impact the retail industry in term of employment and how this impact change over time, we are okay with omitted variable bias.
 
@@ -144,22 +152,32 @@ We first regressed Average Employment Rate per month on a binary variable after_
 
 ```{r}
 # use average employment rate on after_covid
-m1 <- feols(avg_emp ~ after_covid, data=df1, se='hetero')
+m1 <- feols(avg_emp ~ after_covid, data=df1)
 # add year as a categorical control
-m2 <- feols(avg_emp ~ after_covid + factor(year), data=df1, se='hetero')
-etable(m1, m2)
+m2 <- feols(avg_emp ~ after_covid + factor(year), data=df1, vcov=~factor(year))
+etable(m1, m2,se='hetero')
 ```
 
 Because there is collinearity between our binary variable after_covid and categorical variable year, we didn't do a regression with an interaction term between these two.
 
-From the statistical summary, we can see that with model 1, before Covid-19, the mean of the average employment rate per month in retail industry is 0.9565, while after Covid-19, the mean of the average employment rate per month is estimated to decrease by 0.0324. And this effect is highly statistically significant even at 99.9% level. With model 2, before Covid-19, the mean of average employment rate per month is estimated to be 0.9571. After Covid-19 and compared to year 2019, in year 2020 the mean of average employment rate is estimated to decrease by 0.0587; after Covid-19 and compared to year 2019, in year 2021, the mean of average employment rate is estimated to decrease by 0.0189, and this is statistically significant at 99% confidence level; after Covid-19 and compared to year 2019, in year 2022, the mean of average employment rate is estimated to decrease by 0.0076, and this is statistically significant at 99.9% confidence level. These results align with the actual data.
+From the statistical summary, we can see that with model 1, before Covid-19, the mean of the average employment rate per month in retail industry is 0.9545, while after Covid-19, the mean of the average employment rate per month is estimated to decrease by 3.27 percentage points. And this effect is highly statistically significant even at at least 99.9% level. With model 2, before Covid-19, the mean of average employment rate per month is estimated to be 0.9551. After Covid-19 and compared to year 2019, in year 2020 the mean of average employment rate is estimated to decrease by 5.84 percentage points; after Covid-19 and compared to year 2019, in year 2021, the mean of average employment rate is estimated to decrease by 1.98 percentage points, and this is statistically significant at 99% confidence level; after Covid-19 and compared to year 2019, in year 2022, the mean of average employment rate is estimated to decrease by 0.79 percentage points, and this is statistically significant at 99.9% confidence level. These results align with the actual data.
+
+```{r}
+# check for heteroskedasticity in m2
+ggplot(data=df1, aes(x=year_month, y=resid(m2))) +
+  geom_point()
+```
 
 ## Statistics Testing
 
-Finally, we ran an F testing to see if the coefficients of years is joinly zero, because in model 2, the coefficient of year 2020 is not statistically significant.
+Finally, we ran an F testing to see if the coefficients of years is jointly zero, because in model 2, the coefficient of year 2020 is not statistically significant.
 
 ```{r}
 wald(m2, 'year')
 ```
 
-The p-value is 0.001148, therefore, we are able to reject the null hypothesis at 99% confidence level. We do need to include year as a categorical control in the regression.
+The p-value is smaller than 0.01, therefore, we are able to reject the null hypothesis at at least 99% confidence level. We do need to include year as a categorical control in the regression.
+
+## Conclusion
+
+Covid-19 has statistically significant impact on Retail Industry in terms of employment. The average employment rate in Retail industry dropped by 5.84 percentage point in the first year following Covid-19 outbreak. Even though in year 2021 and 2022, average employment rate in Retail industry started to pick up slowly, the average employment rate in 2022 still didn't recover to that of 2019, which is the year before the Covid-19 outbreak.
