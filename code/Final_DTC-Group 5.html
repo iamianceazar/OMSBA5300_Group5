@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Evan Deparsia; Ian Basco; June Lee; Lei Chen">
+
+<title>OMSBA5300 Final DTC - Group 5</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Final_DTC-Group 5_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Final_DTC-Group 5_files/libs/quarto-html/quarto.js"></script>
+<script src="Final_DTC-Group 5_files/libs/quarto-html/popper.min.js"></script>
+<script src="Final_DTC-Group 5_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Final_DTC-Group 5_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Final_DTC-Group 5_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Final_DTC-Group 5_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Final_DTC-Group 5_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Final_DTC-Group 5_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Final_DTC-Group 5_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+<script src="Final_DTC-Group 5_files/libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="Final_DTC-Group 5_files/libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">OMSBA5300 Final DTC - Group 5</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Evan Deparsia; Ian Basco; June Lee; Lei Chen </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="data-cleaning" class="level2">
+<h2 class="anchored" data-anchor-id="data-cleaning">Data Cleaning</h2>
+<p>Aggregate employment variable at industry_month level after filtering out people not in labor force and people in armed force. The reason these records are filtered out is that we want to see the change in employment status, and people not in labor force or in armed force won’t have employment status change. Therefore, they don’t need to be included in the data set.</p>
+<p>We were not able to pull selected year and month data, because it still gave us the entire time range data after select and download, so we need to manually filter out those before 2019 and after April 2022.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># import libraries</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.4     ✔ readr     2.1.4
+✔ forcats   1.0.0     ✔ stringr   1.5.1
+✔ ggplot2   3.4.4     ✔ tibble    3.2.1
+✔ lubridate 1.9.3     ✔ tidyr     1.3.0
+✔ purrr     1.0.2     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rio)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(vtable)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: kableExtra
+
+Attaching package: 'kableExtra'
+
+The following object is masked from 'package:dplyr':
+
+    group_rows</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(fixest)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ipumsr)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lmtest)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'lmtest' was built under R version 4.3.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: zoo
+
+Attaching package: 'zoo'
+
+The following objects are masked from 'package:base':
+
+    as.Date, as.Date.numeric</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(olsrr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'olsrr' was built under R version 4.3.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'olsrr'
+
+The following object is masked from 'package:datasets':
+
+    rivers</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lmtest)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(car)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: carData
+
+Attaching package: 'car'
+
+The following object is masked from 'package:dplyr':
+
+    recode
+
+The following object is masked from 'package:purrr':
+
+    some</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># import data</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>ddi <span class="ot">&lt;-</span> <span class="fu">read_ipums_ddi</span>(<span class="st">"../data/cps_00002.xml"</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read_ipums_micro</span>(ddi)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Use of data from IPUMS CPS is subject to conditions including that users should cite the data appropriately. Use command `ipums_conditions()` for more details.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>ind_name <span class="ot">&lt;-</span> <span class="fu">import</span>(<span class="st">'../data/indnames.csv'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Employment Status &amp; Labor Status</strong></p>
+<p>Given the focus of the analysis on assessing the average monthly employment status , we want to refine the data set to include only individuals actively participating in the labor force. Removing individuals who are not actively participating in the labor force helps reduce the data set’s size and increases the validity of the analysis to capture the actual employment trends. To achieve this, the distribution of EMPSTAT and LABFORCE was checked to determine which one to use as a filter to keep only employment and unemployment related records.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># check labels</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">labeltable</span>(data<span class="sc">$</span>EMPSTAT)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<table class="table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">EMPSTAT</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Label</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">NIU</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">Armed Forces</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">10</td>
+<td style="text-align: left;">At work</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">12</td>
+<td style="text-align: left;">Has job, not at work last week</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">21</td>
+<td style="text-align: left;">Unemployed, experienced worker</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">22</td>
+<td style="text-align: left;">Unemployed, new worker</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">32</td>
+<td style="text-align: left;">NILF, unable to work</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">34</td>
+<td style="text-align: left;">NILF, other</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">36</td>
+<td style="text-align: left;">NILF, retired</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">20 [NOT IN DATA]</td>
+<td style="text-align: left;">Unemployed</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">30 [NOT IN DATA]</td>
+<td style="text-align: left;">Not in labor force</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">31 [NOT IN DATA]</td>
+<td style="text-align: left;">NILF, housework</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">33 [NOT IN DATA]</td>
+<td style="text-align: left;">NILF, school</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">35 [NOT IN DATA]</td>
+<td style="text-align: left;">NILF, unpaid, lt 15 hours</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">labeltable</span>(data<span class="sc">$</span>LABFORCE)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<table class="table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">LABFORCE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Label</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">NIU</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">No, not in the labor force</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Yes, in the labor force</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># check distribution of each status</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(data<span class="sc">$</span>EMPSTAT)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+      0       1      10      12      21      22      32      34      36 
+1398569   24263 3194849  122045  179218   14135  290354  852041 1089480 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(data<span class="sc">$</span>LABFORCE)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+      0       1       2 
+1422832 2231875 3510247 </code></pre>
+</div>
+</div>
+<p>0 - NIU (Not in Universe) and 1 - Armed Forces together in employment status equals to 0 - NIU in labor force variable. And 32 - NILF Unable to work, 34 - NILF other, and 36 - NILF retired together in employment status equals to 1 - No not in labor force in labor force variable. And 10 - At work, 12 - Has job not at work last week, 21 - unemployed experienced worker, and 22 - unemployed new worker together equals 2 - Yes in labor force in labor force variable. Therefore, we can safely filter out those not in labor force by only keeping those with value 2 in labor force variable.</p>
+<p><strong>Age Filter</strong></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># check age </span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(data<span class="sc">$</span>AGE)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   0.00   18.00   39.00   39.12   58.00   85.00 </code></pre>
+</div>
+</div>
+<p>After checking the age distribution, we decided to filter and keep only 18 to 62 years old so those that are not work age won’t dilute our dependent variable.</p>
+<p><strong>Time frame Filter</strong></p>
+<p>As the focus of the analysis lies in evaluating the trend just before the start of the pandemic and during the pandemic, the data set was limited to only include January 2019 - April 2022.</p>
+</section>
+<section id="q1-how-has-covid-affected-the-health-of-the-retail-industry-as-measured-by-employment" class="level2">
+<h2 class="anchored" data-anchor-id="q1-how-has-covid-affected-the-health-of-the-retail-industry-as-measured-by-employment"><strong>Q1:</strong> How has COVID affected the health of the retail industry, as measured by employment?</h2>
+<p>Variables of Interest:</p>
+<ul>
+<li><p><strong>Dependent Variable</strong>: average employment rate per month in the retails industry.</p></li>
+<li><p><strong>Independent Variables</strong>: binary variable After_covid, and categorical variable year, categorical variable month.</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># select variables needed for question 1 and pre-process data</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>df1 <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span> </span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(AGE <span class="sc">&gt;=</span> <span class="dv">18</span> <span class="sc">&amp;</span> AGE <span class="sc">&lt;=</span> <span class="dv">62</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(YEAR, MONTH, WTFINL, EMPSTAT, LABFORCE, IND) <span class="sc">%&gt;%</span> </span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(LABFORCE <span class="sc">==</span> <span class="dv">2</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">year_month =</span> <span class="fu">paste</span>(YEAR, <span class="fu">sprintf</span>(<span class="st">'%02d'</span>, MONTH), <span class="at">sep=</span><span class="st">'-'</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year_month <span class="sc">&gt;=</span> <span class="st">'2019-01'</span> <span class="sc">&amp;</span> year_month <span class="sc">&lt;=</span> <span class="st">'2022-04'</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year_month <span class="sc">!=</span> <span class="st">'2020-03'</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>LABFORCE) <span class="sc">%&gt;%</span> </span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">employed =</span> EMPSTAT <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">12</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_all</span>(tolower) <span class="sc">%&gt;%</span> </span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(ind_name, <span class="at">by=</span><span class="st">'ind'</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(indname <span class="sc">==</span> <span class="st">'Retail Trade'</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year, month) <span class="sc">%&gt;%</span> </span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">avg_emp =</span> <span class="fu">weighted.mean</span>(employed, wtfinl, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">after_covid =</span> <span class="fu">paste</span>(year, <span class="fu">sprintf</span>(<span class="st">'%02d'</span>, month), <span class="at">sep=</span><span class="st">'-'</span>) <span class="sc">&gt;=</span> <span class="st">'2020-04'</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(avg_emp) <span class="sc">%&gt;%</span> </span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">year_month =</span> <span class="fu">as.Date</span>(<span class="fu">paste</span>(year, month, <span class="st">'01'</span>, <span class="at">sep =</span> <span class="st">'-'</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by 'year'. You can override using the
+`.groups` argument.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co">#vtable(df1)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>In the dataset used for answering question 1, March 2020 was dropped due to the March data for other years are null, hence no data to compare to March 2020 data, and we cannot really distinguish whether the effect of Covid really started to kick in in March 2020.</p>
+<section id="eda" class="level3">
+<h3 class="anchored" data-anchor-id="eda">EDA</h3>
+<p>Before deciding on which variable to include in the regressions, EDA was conducted to check the distributions of the dependent variable on its own and distributions of dependent variable for different independent variables.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># check distribution of avg_emp</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df1, <span class="fu">aes</span>(avg_emp)) <span class="sc">+</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Final_DTC-Group-5_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(df1<span class="sc">$</span>avg_emp)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ 0.8176  0.9286  0.9421  0.9336  0.9535  0.9647 </code></pre>
+</div>
+</div>
+<p>Average employment rate was mostly between 0.93 and 0.95, with mean of 0.93 and a few months around 0.85.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># compare the avg_emp between before and after covid</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data=</span>df1, <span class="fu">aes</span>(<span class="at">x=</span>after_covid, <span class="at">y=</span>avg_emp)) <span class="sc">+</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">'After Covid'</span>) <span class="sc">+</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">'Average Employment Rate'</span>) <span class="sc">+</span></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">'Average Employment Rate Before and After Covid '</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Final_DTC-Group-5_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>The average employment rate is very different before and after covid.</p>
+<p>Next we checked how average employment rate changes at the year-month level.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df1, <span class="fu">aes</span>(<span class="at">x=</span>year_month, <span class="at">y=</span>avg_emp)) <span class="sc">+</span>   </span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span>   </span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_labels =</span> <span class="st">"%Y%m"</span>, <span class="at">date_breaks =</span> <span class="st">"1 month"</span>) <span class="sc">+</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">'Year Month'</span>) <span class="sc">+</span>   </span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">'Average Employment Rate'</span>) <span class="sc">+</span>   </span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">'Average Employment Rate by Year Month'</span>) <span class="sc">+</span>   </span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Final_DTC-Group-5_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>From plot we can see that average employment rate had a sharp drop in April 2020, and slowly climbed up in the rest of the months in 2020.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># check distribution of avg_emp by year or month</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df1, <span class="fu">aes</span>(<span class="at">x=</span><span class="fu">factor</span>(year), <span class="at">y=</span>avg_emp)) <span class="sc">+</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">'Year'</span>) <span class="sc">+</span></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">'Average Employment Rate'</span>) <span class="sc">+</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">'Average Employment Rate by Year'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Final_DTC-Group-5_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>The plot shows that the mean of average employment rate per year varied from year to year, mostly had a narrow spread, but had an unusally wide spread in year 2020, which is when the Covid-19 pandemic began. Therefore, year can be a good option to use as control variable.</p>
+<p>Next the distribution of average employment rate in each month was checked.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df1, <span class="fu">aes</span>(<span class="at">x=</span><span class="fu">factor</span>(month), <span class="at">y=</span>avg_emp)) <span class="sc">+</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">'Month'</span>) <span class="sc">+</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">'Average Employment Rate'</span>) <span class="sc">+</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">'Average Employment Rate by Month'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Final_DTC-Group-5_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>The mean of avg_emp doesn’t seem to vary a lot by month, with some data points for month of April, May, June, and July having the largest variance. Based on the Average Employment Rate by Year Month plot, the ones are very likely the immediate months in 2020 after Covid-19. So if Covid-19 didn’t happen the average employment rate doesn’t vary much from month to month. Therefore, month is not necessary to use as a control variable.</p>
+</section>
+<section id="regressions" class="level3">
+<h3 class="anchored" data-anchor-id="regressions">Regressions</h3>
+<p>The average employment rate of retail industry over time is not panel data, therefore, we cannot use fixed effects research design to control for any variables that we don’t know of that have causal effects on average employment rates. However, we can control for years to take out the effect of year on average employment rate from error terms and check on the changes of the effect of Covid-19 from year to year. We know that we are leaving out some variables in the error term, But since we are only concerned about how Covid-19 impact the retail industry in term of employment and how this impact change over time, we are okay with omitted variable bias.</p>
+<p>We first regressed Average Employment Rate per month on a binary variable after_covid, then we added year as a categorical variable in our second model.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># use average employment rate on after_covid</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>m1 <span class="ot">&lt;-</span> <span class="fu">feols</span>(avg_emp <span class="sc">~</span> after_covid, <span class="at">data=</span>df1)</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="co"># add year as a categorical control</span></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>m2 <span class="ot">&lt;-</span> <span class="fu">feols</span>(avg_emp <span class="sc">~</span> after_covid <span class="sc">+</span> <span class="fu">factor</span>(year), <span class="at">data=</span>df1, <span class="at">vcov=</span><span class="sc">~</span><span class="fu">factor</span>(year))</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a><span class="fu">etable</span>(m1, m2,<span class="at">se=</span><span class="st">'hetero'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                  m1                  m2
+Dependent Var.:              avg_emp             avg_emp
+                                                        
+Constant          0.9545*** (0.0019)  0.9551*** (0.0022)
+after_covidTRUE  -0.0327*** (0.0074) -0.0544*** (0.0148)
+factor(year)2020                        -0.0040 (0.0034)
+factor(year)2021                        0.0346* (0.0153)
+factor(year)2022                       0.0465** (0.0151)
+________________ ___________________ ___________________
+S.E. type        Heteroskedast.-rob. Heteroskedast.-rob.
+Observations                      36                  36
+R2                           0.25361             0.52885
+Adj. R2                      0.23165             0.46806
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+<p>Because there is collinearity between our binary variable after_covid and categorical variable year, we didn’t do a regression with an interaction term between these two.</p>
+<p>From the statistical summary, we can see that with model 1, before Covid-19, the mean of the average employment rate per month in retail industry is 0.9545, while after Covid-19, the mean of the average employment rate per month is estimated to decrease by 3.27 percentage points. And this effect is highly statistically significant even at at least 99.9% level. With model 2, before Covid-19, the mean of average employment rate per month is estimated to be 0.9551. After Covid-19 and compared to year 2019, in year 2020 the mean of average employment rate is estimated to decrease by 5.84 percentage points; after Covid-19 and compared to year 2019, in year 2021, the mean of average employment rate is estimated to decrease by 1.98 percentage points, and this is statistically significant at 99% confidence level; after Covid-19 and compared to year 2019, in year 2022, the mean of average employment rate is estimated to decrease by 0.79 percentage points, and this is statistically significant at 99.9% confidence level. These results align with the actual data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co"># check for heteroskedasticity in m2</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data=</span>df1, <span class="fu">aes</span>(<span class="at">x=</span>year_month, <span class="at">y=</span><span class="fu">resid</span>(m2))) <span class="sc">+</span></span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Final_DTC-Group-5_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="statistics-testing" class="level3">
+<h3 class="anchored" data-anchor-id="statistics-testing">Statistics Testing</h3>
+<p>Finally, we ran an F testing to see if the coefficients of years is jointly zero, because in model 2, the coefficient of year 2020 is not statistically significant.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">wald</span>(m2, <span class="st">'year'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Wald test, H0: joint nullity of factor(year)2020, factor(year)2021 and factor(year)2022
+ stat = 5.406e+27, p-value &lt; 2.2e-16, on 3 and 31 DoF, VCOV: Clustered (factor(year)).</code></pre>
+</div>
+</div>
+<p>The p-value is smaller than 0.01, therefore, we are able to reject the null hypothesis at at least 99% confidence level. We do need to include year as a categorical control in the regression.</p>
+</section>
+<section id="conclusion" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion">Conclusion</h3>
+<p>Covid-19 has statistically significant impact on Retail Industry in terms of employment. The average employment rate in Retail industry dropped by 5.84 percentage point in the first year following Covid-19 outbreak. Even though in year 2021 and 2022, average employment rate in Retail industry started to pick up slowly, the average employment rate in 2022 still didn’t recover to that of 2019, which is the year before the Covid-19 outbreak.</p>
+</section>
+</section>
+<section id="q2-how-has-retail-fared-relative-to-other-industries" class="level2">
+<h2 class="anchored" data-anchor-id="q2-how-has-retail-fared-relative-to-other-industries">Q2: How has retail fared relative to other industries?</h2>
+<p>As the first question has discovered the effect of the COVID-19 pandemic on the health of the retail industry measured by employment, our subsequent analysis will delve deeper into understanding how the retail industry performed in comparison to other industries by examining the employment data.</p>
+<p>In this analysis, employment data will serve as a critical indicator of the health of various industries. A higher proportion of the population in a particular industry’s labor force implies that the industry requires additional manpower to meet its demands. A series of regression models will be conducted to see whether the relative amount of employment percentage in retail during the COVID had a more significant impact compared to other industries.</p>
+<p><strong>Dependent Variable:</strong> Average number of people per month in various industries with employment status as employed</p>
+<p><strong>Independent Variable:</strong> Categorical Industry Variables, Binary Covid_19 variable</p>
+<section id="data-cleaning-data-preparation" class="level3">
+<h3 class="anchored" data-anchor-id="data-cleaning-data-preparation"><strong>Data Cleaning &amp; Data Preparation</strong></h3>
+<p><strong>Industries</strong></p>
+<p>A comprehensive range of industry employment data was available within the data set for analysis was imported. Binary dummy variables were created for all industries.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">merge</span>(data, ind_name, <span class="at">by.x =</span> <span class="st">"IND"</span>, <span class="at">by.y =</span> <span class="st">"ind"</span>, <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">labeltable</span>(data<span class="sc">$</span>indname))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>&lt;table class="table" style="margin-left: auto; margin-right: auto;"&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; indname &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Label &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Agriculture, Forestry, Fishing, and Hunting, and Mining &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Agriculture, Forestry, Fishing, and Hunting, and Mining &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Arts, Entertainment, and Recreation, and Accommodation and Food Services &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Arts, Entertainment, and Recreation, and Accommodation and Food Services &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Construction &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Construction &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Educational Services, and Health Care and Social Assistance &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Educational Services, and Health Care and Social Assistance &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Finance and Insurance, and Real Estate and Rental and Leasing &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Finance and Insurance, and Real Estate and Rental and Leasing &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Information &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Information &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Manufacturing &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Manufacturing &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Military &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Military &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Other Services, Except Public Administration &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Other Services, Except Public Administration &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Professional, Scientific, and Management, and Administrative and Waste Management Services &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Professional, Scientific, and Management, and Administrative and Waste Management Services &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Public Administration &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Public Administration &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Retail Trade &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Retail Trade &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Transportation and Warehousing, and Utilities &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Transportation and Warehousing, and Utilities &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Wholesale Trade &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Wholesale Trade &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> data[<span class="sc">!</span><span class="fu">is.na</span>(data<span class="sc">$</span>indname), ]</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Industry dummies - No dummy created for Retail (reference group)</span></span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>data<span class="sc">$</span>agric <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(data<span class="sc">$</span>indname <span class="sc">==</span> <span class="st">"Agriculture, Forestry, Fishing, and Hunting, and Mining"</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>data<span class="sc">$</span>trans <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(data<span class="sc">$</span>indname <span class="sc">==</span> <span class="st">"Transportation and Warehousing, and Utilities"</span>, <span class="dv">1</span>, <span class="dv">0</span>) </span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>data<span class="sc">$</span>constr <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(data<span class="sc">$</span>indname <span class="sc">==</span> <span class="st">"Construction"</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a>data<span class="sc">$</span>manuf <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(data<span class="sc">$</span>indname <span class="sc">==</span> <span class="st">"Manufacturing"</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a>data<span class="sc">$</span>whole <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(data<span class="sc">$</span>indname <span class="sc">==</span> <span class="st">"Wholesale Trade"</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a>data<span class="sc">$</span>info <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(data<span class="sc">$</span>indname <span class="sc">==</span> <span class="st">"Information"</span>, <span class="dv">1</span>, <span class="dv">0</span>) </span>
+<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a>data<span class="sc">$</span>finance <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(data<span class="sc">$</span>indname <span class="sc">==</span> <span class="st">"Finance and Insurance, and Real Estate and Rental and Leasing"</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a>data<span class="sc">$</span>prof <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(data<span class="sc">$</span>indname <span class="sc">==</span> <span class="st">"Professional, Scientific, and Management, and Administrative and Waste Management Services"</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a>data<span class="sc">$</span>educ <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(data<span class="sc">$</span>indname <span class="sc">==</span> <span class="st">"Educational Services, and Health Care and Social Assistance"</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb41-14"><a href="#cb41-14" aria-hidden="true" tabindex="-1"></a>data<span class="sc">$</span>arts <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(data<span class="sc">$</span>indname <span class="sc">==</span> <span class="st">"Arts, Entertainment, and Recreation, and Accommodation and Food Services"</span>, <span class="dv">1</span>, <span class="dv">0</span>)  </span>
+<span id="cb41-15"><a href="#cb41-15" aria-hidden="true" tabindex="-1"></a>data<span class="sc">$</span>other <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(data<span class="sc">$</span>indname <span class="sc">==</span> <span class="st">"Other Services, Except Public Administration"</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb41-16"><a href="#cb41-16" aria-hidden="true" tabindex="-1"></a>data<span class="sc">$</span>pub <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(data<span class="sc">$</span>indname <span class="sc">==</span> <span class="st">"Public Administration"</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb41-17"><a href="#cb41-17" aria-hidden="true" tabindex="-1"></a>data<span class="sc">$</span>military <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(data<span class="sc">$</span>indname <span class="sc">==</span> <span class="st">"Military"</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb41-18"><a href="#cb41-18" aria-hidden="true" tabindex="-1"></a>data<span class="sc">$</span>retail <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(data<span class="sc">$</span>indname <span class="sc">==</span> <span class="st">"Retail Trade"</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Regression 1 Set Up</strong></p>
+<p><strong>Creating Year,Month,Industry</strong> <strong>Aggregate utilized for Regression</strong></p>
+<p>Data has been pre-processed with Year, Month, and Industry aggregates on the year-month average of employment status within various industries. The weighted mean was calculated to factor in the predetermined weight to carry out a regression that depicts closer to the entire population. In addition, any industry that has less than 1000 people in the labor force for a month will be removed to focus only on sizable comparable industries.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>year_month_labor3 <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">year_month =</span> <span class="fu">paste</span>(YEAR, <span class="fu">sprintf</span>(<span class="st">'%02d'</span>, MONTH), <span class="at">sep=</span><span class="st">'-'</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year_month <span class="sc">&gt;=</span> <span class="st">'2015-05'</span> <span class="sc">&amp;</span> year_month <span class="sc">&lt;=</span> <span class="st">'2022-04'</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year_month <span class="sc">!=</span> <span class="st">'2020-03'</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(AGE <span class="sc">&gt;=</span> <span class="dv">18</span> <span class="sc">&amp;</span> AGE <span class="sc">&lt;=</span> <span class="dv">62</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(LABFORCE <span class="sc">==</span> <span class="dv">2</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">employed =</span> <span class="fu">ifelse</span>(EMPSTAT <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">12</span>), <span class="dv">1</span>, <span class="dv">0</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(WTFINL), <span class="sc">!</span><span class="fu">is.na</span>(employed)) <span class="sc">%&gt;%</span></span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(YEAR, MONTH, year_month, indname) <span class="sc">%&gt;%</span></span>
+<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">count =</span> <span class="fu">n</span>(),</span>
+<span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a>            <span class="at">sum_employee =</span> <span class="fu">sum</span>(employed),</span>
+<span id="cb42-12"><a href="#cb42-12" aria-hidden="true" tabindex="-1"></a>            <span class="at">weighted_mean =</span> <span class="fu">weighted.mean</span>(employed, WTFINL, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb42-13"><a href="#cb42-13" aria-hidden="true" tabindex="-1"></a>   <span class="fu">filter</span>(count <span class="sc">&gt;=</span> <span class="dv">1000</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb42-14"><a href="#cb42-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb42-15"><a href="#cb42-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb42-16"><a href="#cb42-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">retail =</span> <span class="fu">ifelse</span>(indname <span class="sc">==</span> <span class="st">'Retail Trade'</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb42-17"><a href="#cb42-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">after_covid =</span> <span class="fu">ifelse</span>(<span class="fu">paste</span>(YEAR, <span class="fu">sprintf</span>(<span class="st">'%02d'</span>, MONTH), <span class="at">sep=</span><span class="st">'-'</span>) <span class="sc">&gt;=</span> <span class="st">'2020-04'</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb42-18"><a href="#cb42-18" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb42-19"><a href="#cb42-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(indname <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Retail Trade"</span>,</span>
+<span id="cb42-20"><a href="#cb42-20" aria-hidden="true" tabindex="-1"></a>                        <span class="st">"Transportation and Warehousing, and Utilities"</span>,</span>
+<span id="cb42-21"><a href="#cb42-21" aria-hidden="true" tabindex="-1"></a>                        <span class="st">"Manufacturing"</span>,</span>
+<span id="cb42-22"><a href="#cb42-22" aria-hidden="true" tabindex="-1"></a>                        <span class="st">"Finance and Insurance, and Real Estate and Rental and Leasing"</span>,</span>
+<span id="cb42-23"><a href="#cb42-23" aria-hidden="true" tabindex="-1"></a>                        <span class="st">"Educational Services, and Health Care and Social Assistance"</span>,</span>
+<span id="cb42-24"><a href="#cb42-24" aria-hidden="true" tabindex="-1"></a>                        <span class="st">"Construction"</span>,</span>
+<span id="cb42-25"><a href="#cb42-25" aria-hidden="true" tabindex="-1"></a>                        <span class="st">"Professional, Scientific, and Management, and Administrative and Waste Management Services"</span>,</span>
+<span id="cb42-26"><a href="#cb42-26" aria-hidden="true" tabindex="-1"></a>                        <span class="st">"Other Services, Except Public Administration"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by 'YEAR', 'MONTH', 'year_month'. You can
+override using the `.groups` argument.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>m_retail <span class="ot">&lt;-</span> <span class="fu">feols</span>(weighted_mean <span class="sc">~</span> retail, <span class="at">data =</span> year_month_labor3)</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m_retail)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>OLS estimation, Dep. Var.: weighted_mean
+Observations: 312 
+Standard-errors: IID 
+             Estimate Std. Error  t value   Pr(&gt;|t|)    
+(Intercept)  0.951111   0.001756 541.7304  &lt; 2.2e-16 ***
+retail      -0.016930   0.004966  -3.4093 0.00073746 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+RMSE: 0.028916   Adj. R2: 0.03303</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">etable</span>(m_retail)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                           m_retail
+Dependent Var.:       weighted_mean
+                                   
+Constant         0.9511*** (0.0018)
+retail          -0.0169*** (0.0050)
+_______________ ___________________
+S.E. type                       IID
+Observations                    312
+R2                          0.03614
+Adj. R2                     0.03303
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+<p>Based on the provided regression model, the retail industry is statistically significant at the 0.001 level. The weighted employment average for the retail industry is 0.0169 units lower than the weighted employment average for non-retail industries, holding all other factors constant. This model does not specifically evaluate the effect of the COVID-19 pandemic but just for the duration of the data set.</p>
+<p>In the next regression model, the independent variable after_covid dummy variable was included to specifically address the statistical impact of weighted employment status during the pandemic months. The weighted employment status was 0.0273 units lower during the COVID-19 pandemic period compared to the non-pandemic months after controlling for the effect of the retail industry. The coefficient for retail did not change in the two models below, suggesting that the retail industry had a lower weighted employment average compared to other industries, regardless of the pandemic. This specifically measured how retail fared relative to other industries during the pandemic.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>m_retail <span class="ot">&lt;-</span> <span class="fu">feols</span>(weighted_mean <span class="sc">~</span> retail, <span class="at">data =</span> year_month_labor3)</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>m_retail1 <span class="ot">&lt;-</span> <span class="fu">feols</span>(weighted_mean <span class="sc">~</span> retail <span class="sc">+</span> after_covid , <span class="at">data =</span> year_month_labor3)</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m_retail)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>OLS estimation, Dep. Var.: weighted_mean
+Observations: 312 
+Standard-errors: IID 
+             Estimate Std. Error  t value   Pr(&gt;|t|)    
+(Intercept)  0.951111   0.001756 541.7304  &lt; 2.2e-16 ***
+retail      -0.016930   0.004966  -3.4093 0.00073746 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+RMSE: 0.028916   Adj. R2: 0.03303</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">etable</span>(m_retail,m_retail1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                           m_retail           m_retail1
+Dependent Var.:       weighted_mean       weighted_mean
+                                                       
+Constant         0.9511*** (0.0018)  0.9686*** (0.0025)
+retail          -0.0169*** (0.0050) -0.0169*** (0.0044)
+after_covid                         -0.0273*** (0.0031)
+_______________ ___________________ ___________________
+S.E. type                       IID                 IID
+Observations                    312                 312
+R2                          0.03614             0.23394
+Adj. R2                     0.03303             0.22898
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+<p>To capture the potential differential impact of the COVID-19 pandemic period on the retail industry compared to other industries, the interaction term retail * after_covid was added. More specifically, the interaction term uncovered whether the COVID-19 pandemic affected the retail industry’s average employment status, which differed from other industries.</p>
+<p>The interaction term allows the model to distinguish the effect of being in the retail industry to be during the pandemic period. The coefficient of -0.0169 suggests that being in the retail industry is associated with a -0.0169 unit lower weighted employment average than non-retail industries during the pre-COVID period.</p>
+<p>The negative coefficient of -0.0273 suggests that the weighted employment between pandemic and non-pandemic months for the non-retail industries was significant at the .001 level.</p>
+<p>For the retail industry, the total effect of the COVID-19 pandemic on the retail industry’s weighted employment average is the sum of the coefficients for after_covid and retail after_covid. The total effect for retail during the pandemic is -.0308 (-0.0040+-0.0268) percentage point lower than during non-pandemic months. However, the interaction term retail&amp;after_covid is not statistically significant, which means that the difference in the pandemic’s impact on the retail industry compared to non-retail is not significantly different from zero.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>m_retail2 <span class="ot">&lt;-</span> <span class="fu">feols</span>(weighted_mean <span class="sc">~</span> retail <span class="sc">+</span> after_covid <span class="sc">+</span> retail <span class="sc">*</span> after_covid, <span class="at">data =</span> year_month_labor3)</span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>m_retail3 <span class="ot">&lt;-</span> <span class="fu">feols</span>(weighted_mean <span class="sc">~</span> retail <span class="sc">+</span> after_covid <span class="sc">+</span> retail <span class="sc">*</span> after_covid, <span class="at">vcov =</span> <span class="st">"hetero"</span>, <span class="at">data =</span> year_month_labor3)</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a><span class="fu">etable</span>(m_retail,m_retail1,m_retail2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                m_retail           m_retail1
+Dependent Var.:            weighted_mean       weighted_mean
+                                                            
+Constant              0.9511*** (0.0018)  0.9686*** (0.0025)
+retail               -0.0169*** (0.0050) -0.0169*** (0.0044)
+after_covid                              -0.0273*** (0.0031)
+retail x after_covid                                        
+____________________ ___________________ ___________________
+S.E. type                            IID                 IID
+Observations                         312                 312
+R2                               0.03614             0.23394
+Adj. R2                          0.03303             0.22898
+
+                               m_retail2
+Dependent Var.:            weighted_mean
+                                        
+Constant              0.9683*** (0.0026)
+retail                 -0.0144. (0.0074)
+after_covid          -0.0268*** (0.0033)
+retail x after_covid    -0.0040 (0.0093)
+____________________ ___________________
+S.E. type                            IID
+Observations                         312
+R2                               0.23440
+Adj. R2                          0.22695
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+<p>Fixed effects were implemented to account for any unobserved industry factors and potentially biased estimates of the coefficients. Industry factor variable was used to control for industry-specific fixed effects to estimate a separate intercept for each industry controlling for the effect of the interaction between the retail and the COVID-19 pandemic. When factoring in the specific industry fixed effect using the factor in name variable, the coefficient retail * after_covid suggests that the weighted employment average in the retail industry did not change in both models (-0.0268 and -0.0040). This suggests that the impact of these variables on weighted employment mean is consistent regardless of whether fixed effects for industry differences were included or not.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>m_retail5 <span class="ot">&lt;-</span> <span class="fu">feols</span>(weighted_mean <span class="sc">~</span> retail <span class="sc">*</span> after_covid <span class="sc">|</span> indname ,<span class="at">vcov =</span> <span class="st">"hetero"</span>, <span class="at">data =</span> year_month_labor3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The variable 'retail' has been removed because of collinearity (see $collin.var).</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">etable</span>(m_retail3,m_retail5)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                               m_retail3           m_retail5
+Dependent Var.:            weighted_mean       weighted_mean
+                                                            
+Constant              0.9683*** (0.0010)                    
+retail               -0.0144*** (0.0020)                    
+after_covid          -0.0268*** (0.0026) -0.0268*** (0.0023)
+retail x after_covid    -0.0040 (0.0072)    -0.0040 (0.0072)
+Fixed-Effects:       ------------------- -------------------
+indname                               No                 Yes
+____________________ ___________________ ___________________
+S.E. type            Heteroskedast.-rob. Heteroskedast.-rob.
+Observations                         312                 312
+R2                               0.23440             0.37449
+Within R2                             --             0.24068
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+<p><strong>Distribution of the Dependent Variable</strong></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(year_month_labor3, <span class="fu">aes</span>(<span class="at">x =</span> weighted_mean)) <span class="sc">+</span></span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">bins =</span> <span class="dv">30</span>, <span class="at">fill =</span> <span class="st">"steelblue"</span>, <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Distribution of the Weighted Employment Mean"</span>,</span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Dependent Variable"</span>,</span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Frequency"</span>) <span class="sc">+</span></span>
+<span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Final_DTC-Group-5_files/figure-html/unnamed-chunk-20-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>m_retail5_log <span class="ot">&lt;-</span> <span class="fu">feols</span>(<span class="fu">log</span>(weighted_mean) <span class="sc">~</span> retail <span class="sc">*</span> after_covid <span class="sc">|</span> indname, <span class="at">data =</span> year_month_labor3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The variable 'retail' has been removed because of collinearity (see $collin.var).</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">etable</span>(m_retail5,m_retail5_log)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                               m_retail5       m_retail5_log
+Dependent Var.:            weighted_mean  log(weighted_mean)
+                                                            
+after_covid          -0.0268*** (0.0023) -0.0286*** (0.0046)
+retail x after_covid    -0.0040 (0.0072)    -0.0049 (0.0046)
+Fixed-Effects:       ------------------- -------------------
+indname                              Yes                 Yes
+____________________ ___________________ ___________________
+S.E. type            Heteroskedast.-rob.         by: indname
+Observations                         312                 312
+R2                               0.37449             0.35753
+Within R2                        0.24068             0.22820
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+<p>While the dependent variable had a right skew, the log transformation did not significantly improve the model performance. The currently skewed distribution of the dependent variable is due to the fact that the dependent variables were created as a year-month aggregate of a binary variable. It was not a continuous variable from the beginning to follow the normal distribution.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Conduct the Wald test</span></span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a><span class="fu">linearHypothesis</span>(m_retail5, <span class="st">"after_covid"</span>, <span class="at">vcov =</span> <span class="fu">vcov</span>(m_retail5, <span class="at">type =</span> <span class="st">"HC1"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Linear hypothesis test
+
+Hypothesis:
+after_covid = 0
+
+Model 1: restricted model
+Model 2: weighted_mean ~ retail * after_covid | indname
+
+Note: Coefficient covariance matrix supplied.
+
+  Df  Chisq Pr(&gt;Chisq)    
+1                         
+2  1 133.95  &lt; 2.2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+<p>The linear hypothesis test was conducted to determine if the COVID-19 pandemic period had a significant impact on the weighted employment average after accounting for industry-specific effects. The test compares the restricted model, assuming no effect on the pandemic period vs.&nbsp;the unrestricted model that included the effect of the pandemic period. The result of the test showed a significant p-value, indicating strong evidence against the null hypothesis. This suggests that the COVID-19 pandemic period had a statistically significant impact on the weighted employment average, even after controlling for differences across industries.</p>
+<p><strong>Conclusion</strong></p>
+<p>The regression model suggests that the COVID-19 pandemic had a significant negative effect on the weighted employment average during the pandemic, holding other variables constant. The regression model also suggested that during the pre-pandemic period, the retail industry had a statistically significant 1.7% lower employment status in the retail sector compared to none retail sector. The interaction term retail*after_covid has a negative suggests that during the pandemic period reduction in employment status is further decreased -0.4 perdentage points. However, this additional pandemic effect on retail sector was not statistically signifant in any of the models. This indicates that there is no significant difference in the impact of the COVID period on the weighted mean between the retail and non-retail groups. In other words, the effect of after_covid on weighted_mean does not significantly differ based on the retail variable. While the inclusion of the fixed effect improves the explanatory power of the model, the industry fixed effect did not have a significant impact on weighted employment status in the retail industry during the pandemic.</p>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

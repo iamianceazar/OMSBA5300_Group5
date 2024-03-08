@@ -1,0 +1,341 @@
+---
+title: "OMSBA5300 Final DTC - Group 5"
+author: "Evan Deparsia; Ian Basco; June Lee; Lei Chen"
+format: html
+editor: visual
+---
+
+## Data Cleaning
+
+Aggregate employment variable at industry_month level after filtering out people not in labor force and people in armed force. The reason these records are filtered out is that we want to see the change in employment status, and people not in labor force or in armed force won't have employment status change. Therefore, they don't need to be included in the data set.
+
+We were not able to pull selected year and month data, because it still gave us the entire time range data after select and download, so we need to manually filter out those before 2019 and after April 2022.
+
+```{r}
+# import libraries
+library(tidyverse)
+library(rio)
+library(vtable)
+library(fixest)
+library(ipumsr)
+library(lubridate)
+library(stringr)
+library(lmtest)
+library(olsrr)
+library(lmtest)
+library(car)
+```
+
+```{r}
+# import data
+ddi <- read_ipums_ddi("../data/cps_00002.xml")
+data <- read_ipums_micro(ddi)
+ind_name <- import('../data/indnames.csv')
+```
+
+**Employment Status & Labor Status**
+
+Given the focus of the analysis on assessing the average monthly employment status , we want to refine the data set to include only individuals actively participating in the labor force. Removing individuals who are not actively participating in the labor force helps reduce the data set's size and increases the validity of the analysis to capture the actual employment trends. To achieve this, the distribution of EMPSTAT and LABFORCE was checked to determine which one to use as a filter to keep only employment and unemployment related records.
+
+```{r}
+# check labels
+labeltable(data$EMPSTAT)
+labeltable(data$LABFORCE)
+```
+
+```{r}
+# check distribution of each status
+table(data$EMPSTAT)
+table(data$LABFORCE)
+```
+
+0 - NIU (Not in Universe) and 1 - Armed Forces together in employment status equals to 0 - NIU in labor force variable. And 32 - NILF Unable to work, 34 - NILF other, and 36 - NILF retired together in employment status equals to 1 - No not in labor force in labor force variable. And 10 - At work, 12 - Has job not at work last week, 21 - unemployed experienced worker, and 22 - unemployed new worker together equals 2 - Yes in labor force in labor force variable. Therefore, we can safely filter out those not in labor force by only keeping those with value 2 in labor force variable.
+
+**Age Filter**
+
+```{r}
+# check age 
+summary(data$AGE)
+```
+
+After checking the age distribution, we decided to filter and keep only 18 to 62 years old so those that are not work age won't dilute our dependent variable.
+
+**Time frame Filter**
+
+As the focus of the analysis lies in evaluating the trend just before the start of the pandemic and during the pandemic, the data set was limited to only include January 2019 - April 2022.
+
+## **Q1:** How has COVID affected the health of the retail industry, as measured by employment?
+
+Variables of Interest:
+
+-   **Dependent Variable**: average employment rate per month in the retails industry.
+
+-   **Independent Variables**: binary variable After_covid, and categorical variable year, categorical variable month.
+
+```{r}
+# select variables needed for question 1 and pre-process data
+
+df1 <- data %>% 
+  filter(AGE >= 18 & AGE <= 62) %>% 
+  select(YEAR, MONTH, WTFINL, EMPSTAT, LABFORCE, IND) %>% 
+  filter(LABFORCE == 2) %>% 
+  mutate(year_month = paste(YEAR, sprintf('%02d', MONTH), sep='-')) %>% 
+  filter(year_month >= '2019-01' & year_month <= '2022-04') %>% 
+  filter(year_month != '2020-03') %>% 
+  select(-LABFORCE) %>% 
+  mutate(employed = EMPSTAT %in% c(10, 12)) %>% 
+  rename_all(tolower) %>% 
+  left_join(ind_name, by='ind') %>% 
+  filter(indname == 'Retail Trade') %>% 
+  group_by(year, month) %>% 
+  summarize(avg_emp = weighted.mean(employed, wtfinl, na.rm = TRUE)) %>% 
+  mutate(after_covid = paste(year, sprintf('%02d', month), sep='-') >= '2020-04') %>% 
+  drop_na(avg_emp) %>% 
+  mutate(year_month = as.Date(paste(year, month, '01', sep = '-')))
+#vtable(df1)
+```
+
+In the dataset used for answering question 1, March 2020 was dropped due to the March data for other years are null, hence no data to compare to March 2020 data, and we cannot really distinguish whether the effect of Covid really started to kick in in March 2020.
+
+### EDA
+
+Before deciding on which variable to include in the regressions, EDA was conducted to check the distributions of the dependent variable on its own and distributions of dependent variable for different independent variables.
+
+```{r}
+# check distribution of avg_emp
+ggplot(df1, aes(avg_emp)) +
+  geom_density()
+summary(df1$avg_emp)
+```
+
+Average employment rate was mostly between 0.93 and 0.95, with mean of 0.93 and a few months around 0.85.
+
+```{r}
+# compare the avg_emp between before and after covid
+ggplot(data=df1, aes(x=after_covid, y=avg_emp)) +
+  geom_boxplot() +
+  xlab('After Covid') +
+  ylab('Average Employment Rate') +
+  ggtitle('Average Employment Rate Before and After Covid ')
+```
+
+The average employment rate is very different before and after covid.
+
+Next we checked how average employment rate changes at the year-month level.
+
+```{r}
+ggplot(df1, aes(x=year_month, y=avg_emp)) +   
+  geom_point() +   
+  scale_x_date(date_labels = "%Y%m", date_breaks = "1 month") +
+  xlab('Year Month') +   
+  ylab('Average Employment Rate') +   
+  ggtitle('Average Employment Rate by Year Month') +   
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+From plot we can see that average employment rate had a sharp drop in April 2020, and slowly climbed up in the rest of the months in 2020.
+
+```{r}
+# check distribution of avg_emp by year or month
+ggplot(df1, aes(x=factor(year), y=avg_emp)) +
+  geom_boxplot() +
+  xlab('Year') +
+  ylab('Average Employment Rate') +
+  ggtitle('Average Employment Rate by Year')
+```
+
+The plot shows that the mean of average employment rate per year varied from year to year, mostly had a narrow spread, but had an unusally wide spread in year 2020, which is when the Covid-19 pandemic began. Therefore, year can be a good option to use as control variable.
+
+Next the distribution of average employment rate in each month was checked.
+
+```{r}
+ggplot(df1, aes(x=factor(month), y=avg_emp)) +
+  geom_boxplot() +
+  xlab('Month') +
+  ylab('Average Employment Rate') +
+  ggtitle('Average Employment Rate by Month')
+```
+
+The mean of avg_emp doesn't seem to vary a lot by month, with some data points for month of April, May, June, and July having the largest variance. Based on the Average Employment Rate by Year Month plot, the ones are very likely the immediate months in 2020 after Covid-19. So if Covid-19 didn't happen the average employment rate doesn't vary much from month to month. Therefore, month is not necessary to use as a control variable.
+
+### Regressions
+
+The average employment rate of retail industry over time is not panel data, therefore, we cannot use fixed effects research design to control for any variables that we don't know of that have causal effects on average employment rates. However, we can control for years to take out the effect of year on average employment rate from error terms and check on the changes of the effect of Covid-19 from year to year. We know that we are leaving out some variables in the error term, But since we are only concerned about how Covid-19 impact the retail industry in term of employment and how this impact change over time, we are okay with omitted variable bias.
+
+We first regressed Average Employment Rate per month on a binary variable after_covid, then we added year as a categorical variable in our second model.
+
+```{r}
+# use average employment rate on after_covid
+m1 <- feols(avg_emp ~ after_covid, data=df1)
+# add year as a categorical control
+m2 <- feols(avg_emp ~ after_covid + factor(year), data=df1, vcov=~factor(year))
+etable(m1, m2,se='hetero')
+```
+
+Because there is collinearity between our binary variable after_covid and categorical variable year, we didn't do a regression with an interaction term between these two.
+
+From the statistical summary, we can see that with model 1, before Covid-19, the mean of the average employment rate per month in retail industry is 0.9545, while after Covid-19, the mean of the average employment rate per month is estimated to decrease by 3.27 percentage points. And this effect is highly statistically significant even at at least 99.9% level. With model 2, before Covid-19, the mean of average employment rate per month is estimated to be 0.9551. After Covid-19 and compared to year 2019, in year 2020 the mean of average employment rate is estimated to decrease by 5.84 percentage points; after Covid-19 and compared to year 2019, in year 2021, the mean of average employment rate is estimated to decrease by 1.98 percentage points, and this is statistically significant at 99% confidence level; after Covid-19 and compared to year 2019, in year 2022, the mean of average employment rate is estimated to decrease by 0.79 percentage points, and this is statistically significant at 99.9% confidence level. These results align with the actual data.
+
+```{r}
+# check for heteroskedasticity in m2
+ggplot(data=df1, aes(x=year_month, y=resid(m2))) +
+  geom_point()
+```
+
+### Statistics Testing
+
+Finally, we ran an F testing to see if the coefficients of years is jointly zero, because in model 2, the coefficient of year 2020 is not statistically significant.
+
+```{r}
+wald(m2, 'year')
+```
+
+The p-value is smaller than 0.01, therefore, we are able to reject the null hypothesis at at least 99% confidence level. We do need to include year as a categorical control in the regression.
+
+### Conclusion
+
+Covid-19 has statistically significant impact on Retail Industry in terms of employment. The average employment rate in Retail industry dropped by 5.84 percentage point in the first year following Covid-19 outbreak. Even though in year 2021 and 2022, average employment rate in Retail industry started to pick up slowly, the average employment rate in 2022 still didn't recover to that of 2019, which is the year before the Covid-19 outbreak.
+
+## Q2: How has retail fared relative to other industries?
+
+As the first question has discovered the effect of the COVID-19 pandemic on the health of the retail industry measured by employment, our subsequent analysis will delve deeper into understanding how the retail industry performed in comparison to other industries by examining the employment data.
+
+In this analysis, employment data will serve as a critical indicator of the health of various industries. A higher proportion of the population in a particular industry's labor force implies that the industry requires additional manpower to meet its demands. A series of regression models will be conducted to see whether the relative amount of employment percentage in retail during the COVID had a more significant impact compared to other industries.
+
+**Dependent Variable:** Average number of people per month in various industries with employment status as employed
+
+**Independent Variable:** Categorical Industry Variables, Binary Covid_19 variable
+
+### **Data Cleaning & Data Preparation**
+
+**Industries**
+
+A comprehensive range of industry employment data was available within the data set for analysis was imported. Binary dummy variables were created for all industries.
+
+```{r}
+data <- merge(data, ind_name, by.x = "IND", by.y = "ind", all.x = TRUE)
+print(labeltable(data$indname))
+data <- data[!is.na(data$indname), ]
+
+# Industry dummies - No dummy created for Retail (reference group)
+
+data$agric <- ifelse(data$indname == "Agriculture, Forestry, Fishing, and Hunting, and Mining", 1, 0)
+data$trans <- ifelse(data$indname == "Transportation and Warehousing, and Utilities", 1, 0) 
+data$constr <- ifelse(data$indname == "Construction", 1, 0)
+data$manuf <- ifelse(data$indname == "Manufacturing", 1, 0)
+data$whole <- ifelse(data$indname == "Wholesale Trade", 1, 0)
+data$info <- ifelse(data$indname == "Information", 1, 0) 
+data$finance <- ifelse(data$indname == "Finance and Insurance, and Real Estate and Rental and Leasing", 1, 0)
+data$prof <- ifelse(data$indname == "Professional, Scientific, and Management, and Administrative and Waste Management Services", 1, 0)
+data$educ <- ifelse(data$indname == "Educational Services, and Health Care and Social Assistance", 1, 0)
+data$arts <- ifelse(data$indname == "Arts, Entertainment, and Recreation, and Accommodation and Food Services", 1, 0)  
+data$other <- ifelse(data$indname == "Other Services, Except Public Administration", 1, 0)
+data$pub <- ifelse(data$indname == "Public Administration", 1, 0)
+data$military <- ifelse(data$indname == "Military", 1, 0)
+data$retail <- ifelse(data$indname == "Retail Trade", 1, 0)
+```
+
+**Regression 1 Set Up**
+
+**Creating Year,Month,Industry** **Aggregate utilized for Regression**
+
+Data has been pre-processed with Year, Month, and Industry aggregates on the year-month average of employment status within various industries. The weighted mean was calculated to factor in the predetermined weight to carry out a regression that depicts closer to the entire population. In addition, any industry that has less than 1000 people in the labor force for a month will be removed to focus only on sizable comparable industries.
+
+```{r}
+year_month_labor3 <- data %>%
+  mutate(year_month = paste(YEAR, sprintf('%02d', MONTH), sep='-')) %>% 
+  filter(year_month >= '2015-05' & year_month <= '2022-04') %>% 
+  filter(year_month != '2020-03') %>% 
+  filter(AGE >= 18 & AGE <= 62) %>% 
+  filter(LABFORCE == 2) %>% 
+  mutate(employed = ifelse(EMPSTAT %in% c(10, 12), 1, 0)) %>%
+  filter(!is.na(WTFINL), !is.na(employed)) %>%
+  group_by(YEAR, MONTH, year_month, indname) %>%
+  summarize(count = n(),
+            sum_employee = sum(employed),
+            weighted_mean = weighted.mean(employed, WTFINL, na.rm = TRUE)) %>%
+   filter(count >= 1000) %>%
+  ungroup() %>%
+  mutate(
+    retail = ifelse(indname == 'Retail Trade', 1, 0),
+    after_covid = ifelse(paste(YEAR, sprintf('%02d', MONTH), sep='-') >= '2020-04', 1, 0)
+  ) %>%
+  filter(indname %in% c("Retail Trade",
+                        "Transportation and Warehousing, and Utilities",
+                        "Manufacturing",
+                        "Finance and Insurance, and Real Estate and Rental and Leasing",
+                        "Educational Services, and Health Care and Social Assistance",
+                        "Construction",
+                        "Professional, Scientific, and Management, and Administrative and Waste Management Services",
+                        "Other Services, Except Public Administration"))
+
+
+m_retail <- feols(weighted_mean ~ retail, data = year_month_labor3)
+summary(m_retail)
+etable(m_retail)
+```
+
+Based on the provided regression model, the retail industry is statistically significant at the 0.001 level. The weighted employment average for the retail industry is 0.0169 units lower than the weighted employment average for non-retail industries, holding all other factors constant. This model does not specifically evaluate the effect of the COVID-19 pandemic but just for the duration of the data set.
+
+In the next regression model, the independent variable after_covid dummy variable was included to specifically address the statistical impact of weighted employment status during the pandemic months. The weighted employment status was 0.0273 units lower during the COVID-19 pandemic period compared to the non-pandemic months after controlling for the effect of the retail industry. The coefficient for retail did not change in the two models below, suggesting that the retail industry had a lower weighted employment average compared to other industries, regardless of the pandemic. This specifically measured how retail fared relative to other industries during the pandemic.
+
+```{r}
+m_retail <- feols(weighted_mean ~ retail, data = year_month_labor3)
+m_retail1 <- feols(weighted_mean ~ retail + after_covid , data = year_month_labor3)
+summary(m_retail)
+etable(m_retail,m_retail1)
+```
+
+To capture the potential differential impact of the COVID-19 pandemic period on the retail industry compared to other industries, the interaction term retail \* after_covid was added. More specifically, the interaction term uncovered whether the COVID-19 pandemic affected the retail industry's average employment status, which differed from other industries.
+
+The interaction term allows the model to distinguish the effect of being in the retail industry to be during the pandemic period. The coefficient of -0.0169 suggests that being in the retail industry is associated with a -0.0169 unit lower weighted employment average than non-retail industries during the pre-COVID period.
+
+The negative coefficient of -0.0273 suggests that the weighted employment between pandemic and non-pandemic months for the non-retail industries was significant at the .001 level.
+
+For the retail industry, the total effect of the COVID-19 pandemic on the retail industry's weighted employment average is the sum of the coefficients for after_covid and retail after_covid. The total effect for retail during the pandemic is -.0308 (-0.0040+-0.0268) percentage point lower than during non-pandemic months. However, the interaction term retail&after_covid is not statistically significant, which means that the difference in the pandemic's impact on the retail industry compared to non-retail is not significantly different from zero.
+
+```{r}
+m_retail2 <- feols(weighted_mean ~ retail + after_covid + retail * after_covid, data = year_month_labor3)
+m_retail3 <- feols(weighted_mean ~ retail + after_covid + retail * after_covid, vcov = "hetero", data = year_month_labor3)
+etable(m_retail,m_retail1,m_retail2)
+```
+
+Fixed effects were implemented to account for any unobserved industry factors and potentially biased estimates of the coefficients. Industry factor variable was used to control for industry-specific fixed effects to estimate a separate intercept for each industry controlling for the effect of the interaction between the retail and the COVID-19 pandemic. When factoring in the specific industry fixed effect using the factor in name variable, the coefficient retail \* after_covid suggests that the weighted employment average in the retail industry did not change in both models (-0.0268 and -0.0040). This suggests that the impact of these variables on weighted employment mean is consistent regardless of whether fixed effects for industry differences were included or not.
+
+```{r}
+m_retail5 <- feols(weighted_mean ~ retail * after_covid | indname ,vcov = "hetero", data = year_month_labor3)
+
+
+etable(m_retail3,m_retail5)
+```
+
+**Distribution of the Dependent Variable**
+
+```{r}
+ggplot(year_month_labor3, aes(x = weighted_mean)) +
+  geom_histogram(bins = 30, fill = "steelblue", color = "white") +
+  labs(title = "Distribution of the Weighted Employment Mean",
+       x = "Dependent Variable",
+       y = "Frequency") +
+  theme_minimal()
+```
+
+```{r}
+m_retail5_log <- feols(log(weighted_mean) ~ retail * after_covid | indname, data = year_month_labor3)
+etable(m_retail5,m_retail5_log)
+```
+
+While the dependent variable had a right skew, the log transformation did not significantly improve the model performance. The currently skewed distribution of the dependent variable is due to the fact that the dependent variables were created as a year-month aggregate of a binary variable. It was not a continuous variable from the beginning to follow the normal distribution.
+
+```{r}
+# Conduct the Wald test
+linearHypothesis(m_retail5, "after_covid", vcov = vcov(m_retail5, type = "HC1"))
+
+
+```
+
+The linear hypothesis test was conducted to determine if the COVID-19 pandemic period had a significant impact on the weighted employment average after accounting for industry-specific effects. The test compares the restricted model, assuming no effect on the pandemic period vs. the unrestricted model that included the effect of the pandemic period. The result of the test showed a significant p-value, indicating strong evidence against the null hypothesis. This suggests that the COVID-19 pandemic period had a statistically significant impact on the weighted employment average, even after controlling for differences across industries.
+
+**Conclusion**
+
+The regression model suggests that the COVID-19 pandemic had a significant negative effect on the weighted employment average during the pandemic, holding other variables constant. The regression model also suggested that during the pre-pandemic period, the retail industry had a statistically significant 1.7% lower employment status in the retail sector compared to none retail sector. The interaction term retail\*after_covid has a negative suggests that during the pandemic period reduction in employment status is further decreased -0.4 perdentage points. However, this additional pandemic effect on retail sector was not statistically signifant in any of the models. This indicates that there is no significant difference in the impact of the COVID period on the weighted mean between the retail and non-retail groups. In other words, the effect of after_covid on weighted_mean does not significantly differ based on the retail variable. While the inclusion of the fixed effect improves the explanatory power of the model, the industry fixed effect did not have a significant impact on weighted employment status in the retail industry during the pandemic.
