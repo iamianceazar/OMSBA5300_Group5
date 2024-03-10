@@ -1,15 +1,13 @@
 ---
 title: "OMSBA5300 Final DTC - Group 5"
-author: "Evan Deparsia; Ian Basco; June Lee; Lei Chen"
+author: "Evan Deparsia; Ian Ceazar Basco; June Shin Lee; Lei Chen"
 format: html
 editor: visual
 ---
 
-## Data Cleaning
-
-Aggregate employment variable at industry_month level after filtering out people not in labor force and people in armed force. The reason these records are filtered out is that we want to see the change in employment status, and people not in labor force or in armed force won't have employment status change. Therefore, they don't need to be included in the data set.
-
-We were not able to pull selected year and month data, because it still gave us the entire time range data after select and download, so we need to manually filter out those before 2019 and after April 2022.
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
 
 ```{r}
 # import libraries
@@ -26,6 +24,8 @@ library(lmtest)
 library(car)
 ```
 
+## Load the data from the IPUMS website and the industry code file
+
 ```{r}
 # import data
 ddi <- read_ipums_ddi("../data/cps_00002.xml")
@@ -33,9 +33,15 @@ data <- read_ipums_micro(ddi)
 ind_name <- import('../data/indnames.csv')
 ```
 
-**Employment Status & Labor Status**
+## Data Cleaning In General
 
-Given the focus of the analysis on assessing the average monthly employment status , we want to refine the data set to include only individuals actively participating in the labor force. Removing individuals who are not actively participating in the labor force helps reduce the data set's size and increases the validity of the analysis to capture the actual employment trends. To achieve this, the distribution of EMPSTAT and LABFORCE was checked to determine which one to use as a filter to keep only employment and unemployment related records.
+Aggregate employment variable at industry_year_month level after filtering out people not in labor force and people in armed force, as well as those younger than 18 or older than 62. The reason these records are filtered out is that we want to see the change in employment status, and people not in labor force, in armed force, or not eligible for employment in age won't have employment status change. Therefore, they don't need to be included in the data set.
+
+We were not able to pull selected year and month data, because it still gave us the entire time range data after select and download, so we need to manually filter out those before 2019 and after April 2022.
+
+**Employment Status & Labor Status Filter**
+
+Given the focus of the analysis on assessing the average year_month employment status change, we want to refine the data set to include only individuals actively participating in the labor force. Removing individuals who are not actively participating in the labor force helps reduce the data set's size and increases the validity of the analysis to capture the actual employment trends. To achieve this, the distribution of EMPSTAT and LABFORCE was checked to determine which one to use as a filter to keep only employment and unemployment related records.
 
 ```{r}
 # check labels
@@ -60,11 +66,11 @@ summary(data$AGE)
 
 After checking the age distribution, we decided to filter and keep only 18 to 62 years old so those that are not work age won't dilute our dependent variable.
 
-**Time frame Filter**
+**Time Frame Filter**
 
 As the focus of the analysis lies in evaluating the trend just before the start of the pandemic and during the pandemic, the data set was limited to only include January 2019 - April 2022.
 
-## **Q1:** How has COVID affected the health of the retail industry, as measured by employment?
+## Q1**:** How has COVID affected the health of the retail industry, as measured by employment?
 
 Variables of Interest:
 
@@ -108,7 +114,7 @@ ggplot(df1, aes(avg_emp)) +
 summary(df1$avg_emp)
 ```
 
-Average employment rate was mostly between 0.93 and 0.95, with mean of 0.93 and a few months around 0.85.
+Average employment rate was mostly between 0.93 and 0.95, with mean of 0.93.
 
 ```{r}
 # compare the avg_emp between before and after covid
@@ -156,13 +162,13 @@ ggplot(df1, aes(x=factor(month), y=avg_emp)) +
   ggtitle('Average Employment Rate by Month')
 ```
 
-The mean of avg_emp doesn't seem to vary a lot by month, with some data points for month of April, May, June, and July having the largest variance. Based on the Average Employment Rate by Year Month plot, the ones are very likely the immediate months in 2020 after Covid-19. So if Covid-19 didn't happen the average employment rate doesn't vary much from month to month. Therefore, month is not necessary to use as a control variable.
+The mean of avg_emp doesn't seem to vary a lot by month, with some data points for month of April, May, June, and July having the largest variance. Based on the Average Employment Rate by Year Month plot, these ones are very likely the immediate months in 2020 after Covid-19. So if Covid-19 didn't happen the average employment rate doesn't vary much from month to month. Therefore, month is not necessary to be used as a control variable.
 
 ### Regressions
 
 The average employment rate of retail industry over time is not panel data, therefore, we cannot use fixed effects research design to control for any variables that we don't know of that have causal effects on average employment rates. However, we can control for years to take out the effect of year on average employment rate from error terms and check on the changes of the effect of Covid-19 from year to year. We know that we are leaving out some variables in the error term, But since we are only concerned about how Covid-19 impact the retail industry in term of employment and how this impact change over time, we are okay with omitted variable bias.
 
-We first regressed Average Employment Rate per month on a binary variable after_covid, then we added year as a categorical variable in our second model.
+We first regressed Average Employment Rate per year-month on a binary variable after_covid, then we added year as a categorical variable in our second model.
 
 ```{r}
 # use average employment rate on after_covid
@@ -181,6 +187,8 @@ From the statistical summary, we can see that with model 1, before Covid-19, the
 ggplot(data=df1, aes(x=year_month, y=resid(m2))) +
   geom_point()
 ```
+
+The residuals plot shows that there is some heteroskedasticity, therefore, it is necessary to use heteroskedasticity robust standard errors in the above etable() when generating the statistical summary.
 
 ### Statistics Testing
 
@@ -206,45 +214,45 @@ In this analysis, employment data will serve as a critical indicator of the heal
 
 **Independent Variable:** Categorical Industry Variables, Binary Covid_19 variable
 
-### **Data Cleaning & Data Preparation**
+### Data Cleaning & Data Preparation
 
 **Industries**
 
 A comprehensive range of industry employment data was available within the data set for analysis was imported. Binary dummy variables were created for all industries.
 
 ```{r}
-data <- merge(data, ind_name, by.x = "IND", by.y = "ind", all.x = TRUE)
-print(labeltable(data$indname))
-data <- data[!is.na(data$indname), ]
+data_1 <- merge(data, ind_name, by.x = "IND", by.y = "ind", all.x = TRUE)
+labeltable(data_1$indname)
+data_1 <- data_1[!is.na(data_1$indname), ]
 
 # Industry dummies - No dummy created for Retail (reference group)
 
-data$agric <- ifelse(data$indname == "Agriculture, Forestry, Fishing, and Hunting, and Mining", 1, 0)
-data$trans <- ifelse(data$indname == "Transportation and Warehousing, and Utilities", 1, 0) 
-data$constr <- ifelse(data$indname == "Construction", 1, 0)
-data$manuf <- ifelse(data$indname == "Manufacturing", 1, 0)
-data$whole <- ifelse(data$indname == "Wholesale Trade", 1, 0)
-data$info <- ifelse(data$indname == "Information", 1, 0) 
-data$finance <- ifelse(data$indname == "Finance and Insurance, and Real Estate and Rental and Leasing", 1, 0)
-data$prof <- ifelse(data$indname == "Professional, Scientific, and Management, and Administrative and Waste Management Services", 1, 0)
-data$educ <- ifelse(data$indname == "Educational Services, and Health Care and Social Assistance", 1, 0)
-data$arts <- ifelse(data$indname == "Arts, Entertainment, and Recreation, and Accommodation and Food Services", 1, 0)  
-data$other <- ifelse(data$indname == "Other Services, Except Public Administration", 1, 0)
-data$pub <- ifelse(data$indname == "Public Administration", 1, 0)
-data$military <- ifelse(data$indname == "Military", 1, 0)
-data$retail <- ifelse(data$indname == "Retail Trade", 1, 0)
+data_1$agric <- ifelse(data_1$indname == "Agriculture, Forestry, Fishing, and Hunting, and Mining", 1, 0)
+data_1$trans <- ifelse(data_1$indname == "Transportation and Warehousing, and Utilities", 1, 0) 
+data_1$constr <- ifelse(data_1$indname == "Construction", 1, 0)
+data_1$manuf <- ifelse(data_1$indname == "Manufacturing", 1, 0)
+data_1$whole <- ifelse(data_1$indname == "Wholesale Trade", 1, 0)
+data_1$info <- ifelse(data_1$indname == "Information", 1, 0) 
+data_1$finance <- ifelse(data_1$indname == "Finance and Insurance, and Real Estate and Rental and Leasing", 1, 0)
+data_1$prof <- ifelse(data_1$indname == "Professional, Scientific, and Management, and Administrative and Waste Management Services", 1, 0)
+data_1$educ <- ifelse(data_1$indname == "Educational Services, and Health Care and Social Assistance", 1, 0)
+data_1$arts <- ifelse(data_1$indname == "Arts, Entertainment, and Recreation, and Accommodation and Food Services", 1, 0)  
+data_1$other <- ifelse(data_1$indname == "Other Services, Except Public Administration", 1, 0)
+data_1$pub <- ifelse(data_1$indname == "Public Administration", 1, 0)
+data_1$military <- ifelse(data_1$indname == "Military", 1, 0)
+data_1$retail <- ifelse(data_1$indname == "Retail Trade", 1, 0)
 ```
 
-**Regression 1 Set Up**
+### **Regressions Set Up**
 
 **Creating Year,Month,Industry** **Aggregate utilized for Regression**
 
 Data has been pre-processed with Year, Month, and Industry aggregates on the year-month average of employment status within various industries. The weighted mean was calculated to factor in the predetermined weight to carry out a regression that depicts closer to the entire population. In addition, any industry that has less than 1000 people in the labor force for a month will be removed to focus only on sizable comparable industries.
 
 ```{r}
-year_month_labor3 <- data %>%
+year_month_labor3 <- data_1 %>%
   mutate(year_month = paste(YEAR, sprintf('%02d', MONTH), sep='-')) %>% 
-  filter(year_month >= '2015-05' & year_month <= '2022-04') %>% 
+  filter(year_month >= '2019-01' & year_month <= '2022-04') %>% 
   filter(year_month != '2020-03') %>% 
   filter(AGE >= 18 & AGE <= 62) %>% 
   filter(LABFORCE == 2) %>% 
@@ -309,7 +317,7 @@ m_retail5 <- feols(weighted_mean ~ retail * after_covid | indname ,vcov = "heter
 etable(m_retail3,m_retail5)
 ```
 
-**Distribution of the Dependent Variable**
+### Distribution of the Dependent Variable
 
 ```{r}
 ggplot(year_month_labor3, aes(x = weighted_mean)) +
@@ -336,6 +344,112 @@ linearHypothesis(m_retail5, "after_covid", vcov = vcov(m_retail5, type = "HC1"))
 
 The linear hypothesis test was conducted to determine if the COVID-19 pandemic period had a significant impact on the weighted employment average after accounting for industry-specific effects. The test compares the restricted model, assuming no effect on the pandemic period vs. the unrestricted model that included the effect of the pandemic period. The result of the test showed a significant p-value, indicating strong evidence against the null hypothesis. This suggests that the COVID-19 pandemic period had a statistically significant impact on the weighted employment average, even after controlling for differences across industries.
 
-**Conclusion**
+### Conclusion
 
 The regression model suggests that the COVID-19 pandemic had a significant negative effect on the weighted employment average during the pandemic, holding other variables constant. The regression model also suggested that during the pre-pandemic period, the retail industry had a statistically significant 1.7% lower employment status in the retail sector compared to none retail sector. The interaction term retail\*after_covid has a negative suggests that during the pandemic period reduction in employment status is further decreased -0.4 perdentage points. However, this additional pandemic effect on retail sector was not statistically signifant in any of the models. This indicates that there is no significant difference in the impact of the COVID period on the weighted mean between the retail and non-retail groups. In other words, the effect of after_covid on weighted_mean does not significantly differ based on the retail variable. While the inclusion of the fixed effect improves the explanatory power of the model, the industry fixed effect did not have a significant impact on weighted employment status in the retail industry during the pandemic.
+
+## Q3: Retail needs to worry about who has money to spend - what has changed about *who* is working and earning money?
+
+**Dependent Variable:** Binary employment status at person level in retail industry
+
+**Independent Variable:** Binary Covid_19 variable, binary sexMale, binary Married, binary raceWhite, binary incomeHigh
+
+### Data cleaning
+
+```{r}
+df3 <- data %>%   
+  filter(LABFORCE == 2) %>%   
+  filter((YEAR == 2019 & MONTH >= 1& !(MONTH == 3)) |            
+           (YEAR > 2019 & YEAR < 2022& !(MONTH == 3)) |            
+           (YEAR == 2022 & MONTH <= 4 & !(MONTH == 3))) %>%   
+  mutate(employed = EMPSTAT %in% c(10, 12)) %>%   
+  rename_all(tolower) %>%   
+  left_join(ind_name, by='ind') %>%   
+  filter(indname == 'Retail Trade') %>%   
+  mutate(after_covid = paste(year, sprintf('%02d', month), sep='-') >= '2020-04') %>%   
+  mutate(year_month = as.Date(paste(year, month, '01', sep = '-')))  %>%   
+  mutate(sexMale = sex %in% c(2)) %>%   
+  mutate(married = ifelse(marst == 1 | marst ==2, TRUE,FALSE)) %>%   
+  mutate(raceWhite = race %in% c(100)) %>%   
+  filter(age >= 18 & age <= 62) %>%   
+  mutate(across(c(27,29,31,32,33), factor)) %>%    
+  mutate(incomeHigh = faminc %in% c(830, 841, 842, 843)) 
+```
+
+### Assumptions
+
+1.  The data only includes individuals who are in the labor force.
+
+2.  The data is only from January 2019 to April 2022 excluding March.
+
+3.  It only includes data from the retail industry.
+
+4.  `sexMale` variable indicates whether the individuals are a male or female.
+
+5.  `married` variable indicates whether the individuals are married or unmarried.
+
+6.  `raceWhite` variable indicates whether the individuals are white or non-white.
+
+7.  `incomeHigh` variable indicates whether the individuals are making an income above or below \$60,000.
+
+### Regressions
+
+We will use two regressions to answer the question of who is working and earning money. We will use the `employed` and `incomeHigh` as our dependent variables and use the interaction terms between `married`, `raceWhite`, `sexMale` and `after_covid` as our independent variables.
+
+#### First Regression: who is working?
+
+```{r}
+question3_1 <- feols(I(employed == TRUE) ~ raceWhite*after_covid + sexMale*after_covid + married*after_covid, data = df3) 
+etable(question3_1, se = 'hetero')
+```
+
+We can observe from the `etable` that before COVID...
+
+1.  Being white has a 2.65 percentage point increase in the probability of being employed compared to non-white.
+2.  Being married has a 3.10 percentage point increase in the probability of being employed compared to unmarried.
+3.  Being male has a -0.89 percentage point decrease in the probability of being employed compared to female.
+
+From the same `etable`, we can also observe that after COVID...
+
+1.  Being white has a 2.65 + 0.74 = 3.39 percentage point increase in the probability of being employed compared to non-white.
+2.  Being married has a 3.10 + 0.80 = 3.9 percentage point increase in the probability of being employed compared to unmarried.
+3.  Being male has a -0.89 - 0.06 = -0.95 percentage point decrease in the probability of being employed compared to females.
+
+### Statistics Testing
+
+```{r}
+wald(question3_1, c('raceWhite', 'sexMale','marriage'))
+```
+
+With a p-value of 2.2e-16, we can say that we can reject the null hypothesis. We can also say that our model works better with the variables included in it.
+
+#### Second regression: who is earning money?
+
+```{r}
+question3_2 <- feols(I(incomeHigh) ~ raceWhite*after_covid + sexMale*after_covid + married*after_covid, data = df3) 
+etable(question3_2, se = 'hetero')
+```
+
+We can observe from the `etable` that **before** COVID...
+
+1.  Being white has a 6.92 percentage point increase in the probability of having higher income compared to non-white.
+2.  Being married has a 20.81 percentage point increase in the probability of having higher income compared to unmarried.
+3.  Being male has a -5 percentage point decrease in the probability of having higher income compared to females.
+
+From the same `etable`, we can also observe that **after** COVID...
+
+1.  Being white has a 6.92 + 0.20 = 7.12 percentage point increase in the probability of having higher income compared to non-whites.
+2.  Being married has a 20.81 - 0.36 = 20.45 percentage point increase in the probability of having higher income compared to unmarried.
+3.  Being male has a -5 + 0.32 = -4.68 percentage point decrease in the probability of having higher income compared to females.
+
+### Statistics Testing
+
+```{r}
+wald(question3_2, c('raceWhite', 'sexMale','marriage'))
+```
+
+With a p-value of 2.2e-16, we can say that we can reject the null hypothesis. We can also say that our model works better with the variables included in it.
+
+### Conclusion
+
+Based on the results, we can say that being white and married increased the chances of being employed while being male decreased that chance after COVID. We can also say that being white and male increases the chances of having a higher income, while being married decreases that chance after COVID.
