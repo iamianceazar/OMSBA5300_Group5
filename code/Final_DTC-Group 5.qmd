@@ -350,9 +350,9 @@ The regression model suggests that the COVID-19 pandemic had a significant negat
 
 ## Q3: Retail needs to worry about who has money to spend - what has changed about *who* is working and earning money?
 
-**Dependent Variable:** Binary employment status at person level in retail industry
+**Dependent Variable:** Binary employment status at person level in retail industry; binary incomeHigh at household level in retail industry
 
-**Independent Variable:** Binary Covid_19 variable, binary sexMale, binary Married, binary raceWhite, binary incomeHigh
+**Independent Variable:** Binary Covid_19 variable, binary sexMale, binary Married, binary raceWhite
 
 ### Data cleaning
 
